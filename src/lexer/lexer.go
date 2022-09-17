@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"MyComiler/src/token"
+	"MyCompiler/src/token"
 )
 
 // TODO: 支持Unicode， 需要把ch改成rune，并且要更换readChar的逻辑

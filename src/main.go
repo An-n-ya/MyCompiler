@@ -1,7 +1,7 @@
 package main
 
 import (
-	"MyComiler/src/repl"
+	"MyCompiler/src/repl"
 	"os"
 )
 

@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"MyComiler/src/lexer"
-	"MyComiler/src/token"
+	"MyCompiler/src/lexer"
+	"MyCompiler/src/token"
 	"testing"
 )
 

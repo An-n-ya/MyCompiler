@@ -9,6 +9,7 @@ type Token struct {
 	Literal string
 }
 
+// TODO: 支持字符串字面量 支持浮点数
 // 所有的类型
 const (
 	// 特殊类型

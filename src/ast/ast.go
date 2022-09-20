@@ -44,6 +44,14 @@ type PrefixExpression struct {
 	Right    Expression
 }
 
+// InfixExpression expression 中缀表达式
+type InfixExpression struct {
+	Token    token.Token
+	Operator string
+	Left     Expression
+	Right    Expression
+}
+
 // LetStatement statement let 语句Node
 // 由三部分组成：1.let 2.等号左边的标识符 3.等号右边的表达式
 type LetStatement struct {
@@ -157,3 +165,19 @@ func (p *PrefixExpression) String() string {
 }
 
 func (p *PrefixExpression) expressionNode() {}
+
+func (i *InfixExpression) TokenLiteral() string { return i.Token.Literal }
+
+func (i *InfixExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(i.Left.String())
+	out.WriteString(" " + i.Operator + " ")
+	out.WriteString(i.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+func (i *InfixExpression) expressionNode() {}

@@ -37,6 +37,12 @@ type IntegerLiteral struct {
 	Value int64
 }
 
+// BooleanLiteral expression 布尔字面量表达式
+type BooleanLiteral struct {
+	Token token.Token
+	Value bool
+}
+
 // PrefixExpression expression 前缀表达式
 type PrefixExpression struct {
 	Token    token.Token
@@ -150,6 +156,12 @@ func (i *IntegerLiteral) TokenLiteral() string { return i.Token.Literal }
 func (i *IntegerLiteral) String() string { return i.Token.Literal }
 
 func (i *IntegerLiteral) expressionNode() {}
+
+func (b *BooleanLiteral) TokenLiteral() string { return b.Token.Literal }
+
+func (b *BooleanLiteral) String() string { return b.Token.Literal }
+
+func (b *BooleanLiteral) expressionNode() {}
 
 func (p *PrefixExpression) TokenLiteral() string { return p.Token.Literal }
 

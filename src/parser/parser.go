@@ -85,6 +85,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(token.IF, p.parseIfExpression)
 
 	// 注册中缀解析函数
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -110,7 +112,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{Statement: []ast.Statement{}}
 
 	for p.curToken.Type != token.EOF {
-		stmt := p.parseProgram()
+		stmt := p.parseStatement()
 		if stmt != nil {
 			program.Statement = append(program.Statement, stmt)
 		}
@@ -125,7 +127,7 @@ func (p *Parser) Error() []string {
 	return p.errors
 }
 
-func (p *Parser) parseProgram() ast.Statement {
+func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
@@ -308,4 +310,68 @@ func (p *Parser) parseBoolean() ast.Expression {
 		Token: p.curToken,
 		Value: p.curTokenIs(token.TRUE),
 	}
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+	// 解析括号里的表达式
+	exp := p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RPAREN) {
+		// 表达式应该被右括号括起来
+		return nil
+	}
+	return exp
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{Token: p.curToken}
+
+	// if 后应该是左括号
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	// 跳过左括号
+	p.nextToken()
+	// 解析条件表达式
+	expression.Condition = p.parseExpression(LOWEST)
+
+	// 条件表达式后面应该是右括号
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	// 下面解析consequence
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	expression.Consequence = p.parseBlockStatement()
+
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken()
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+		expression.Alternative = p.parseBlockStatement()
+	}
+
+	return expression
+
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: p.curToken}
+	block.Statements = []ast.Statement{}
+	// 跳过左花括号
+	p.nextToken()
+
+	for !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+		p.nextToken()
+	}
+	return block
 }

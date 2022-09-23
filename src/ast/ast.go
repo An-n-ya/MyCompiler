@@ -10,19 +10,53 @@ type Node interface {
 	String() string
 }
 
+// region statement
+
+// Program statement 程序Node（顶级Node）
+type Program struct {
+	Statement []Statement
+}
+
 type Statement interface {
 	Node
 	statementNode()
 }
 
+// LetStatement statement let 语句Node
+// 由三部分组成：1.let 2.等号左边的标识符 3.等号右边的表达式
+type LetStatement struct {
+	Token token.Token // token.LET 词法单元
+	Name  *Identifier
+	Value Expression
+}
+
+// ReturnStatement statement return语句node
+// 由两部分组成：return + 表达式
+type ReturnStatement struct {
+	Token       token.Token
+	ReturnValue Expression
+}
+
+// ExpressionStatement statement 表达式语句
+// 仅仅有一个表达式构成的语句，至此语言中的三种语句都定义完成
+type ExpressionStatement struct {
+	Token      token.Token
+	Expression Expression
+}
+
+// BlockStatement 语句块
+type BlockStatement struct {
+	Token      token.Token // 词法单元是 {
+	Statements []Statement
+}
+
+// endregion
+
+// region expression
+
 type Expression interface {
 	Node
 	expressionNode()
-}
-
-// Program statement 程序Node（顶级Node）
-type Program struct {
-	Statement []Statement
 }
 
 // Identifier expression 标识符表达式
@@ -58,27 +92,15 @@ type InfixExpression struct {
 	Right    Expression
 }
 
-// LetStatement statement let 语句Node
-// 由三部分组成：1.let 2.等号左边的标识符 3.等号右边的表达式
-type LetStatement struct {
-	Token token.Token // token.LET 词法单元
-	Name  *Identifier
-	Value Expression
+// IfExpression expression if表达式
+type IfExpression struct {
+	Token       token.Token // 词法单元为 if
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
 }
 
-// ReturnStatement statement return语句node
-// 由两部分组成：return + 表达式
-type ReturnStatement struct {
-	Token       token.Token
-	ReturnValue Expression
-}
-
-// ExpressionStatement statement 表达式语句
-// 仅仅有一个表达式构成的语句，至此语言中的三种语句都定义完成
-type ExpressionStatement struct {
-	Token      token.Token
-	Expression Expression
-}
+// endregion
 
 func (p *Program) TokenLiteral() string {
 	if len(p.Statement) > 0 {
@@ -193,3 +215,35 @@ func (i *InfixExpression) String() string {
 }
 
 func (i *InfixExpression) expressionNode() {}
+
+func (i *IfExpression) TokenLiteral() string { return i.Token.Literal }
+
+func (i *IfExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("if")
+	out.WriteString(i.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(i.Consequence.String())
+	if i.Alternative != nil {
+		out.WriteString("else ")
+		out.WriteString(i.Alternative.String())
+	}
+	return out.String()
+}
+
+func (i *IfExpression) expressionNode() {}
+
+func (b *BlockStatement) TokenLiteral() string { return b.Token.Literal }
+
+func (b *BlockStatement) String() string {
+	var out bytes.Buffer
+
+	for _, s := range b.Statements {
+		out.WriteString(s.String())
+	}
+	return out.String()
+}
+
+func (b *BlockStatement) statementNode() {}
+

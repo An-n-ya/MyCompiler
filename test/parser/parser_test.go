@@ -425,6 +425,15 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		}, {
 			"3 < 5 == true",
 			"((3 < 5) == true)",
+		}, {
+			"1 + (2 + 3) + 4",
+			"((1 + (2 + 3)) + 4)",
+		}, {
+			"!(true == true)",
+			"(!(true == true))",
+		}, {
+			"2 / (5 + 5)",
+			"(2 / (5 + 5))",
 		},
 	}
 
@@ -469,6 +478,118 @@ func TestIdentifierExpression(t *testing.T) {
 	}
 	if ident.TokenLiteral() != "foo" {
 		t.Errorf("ident.TokenLiteral is not %s. got %s", input, ident.TokenLiteral())
+	}
+
+}
+
+func TestIfElseExpression(t *testing.T) {
+	input := `if (x < y) { x } else { y }`
+
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statement) != 1 {
+		t.Fatalf("program.Statements do not contain %d statements. got %d",
+			1, len(program.Statement))
+	}
+
+	// 条件一定是表达式语句
+	stmt, ok := program.Statement[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ExpressionStatement. got %T",
+			program.Statement[0])
+	}
+
+	exp, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ifExpression, got %T", stmt.Expression)
+	}
+
+	// 本示例的条件应该是一个中缀表达式
+	if !testInfixExpression(t, exp.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(exp.Consequence.Statements) != 1 {
+		t.Fatalf("consequence is not 1 statments. got %d",
+			len(exp.Consequence.Statements))
+	}
+
+	consequence, ok := exp.Consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statements[0] is not ExpressionStatement. got %T",
+			exp.Consequence.Statements[0])
+	}
+
+	if !testIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+
+	if len(exp.Alternative.Statements) != 1 {
+		t.Fatalf("alternative is not 1 statments. got %d",
+			len(exp.Alternative.Statements))
+	}
+
+	alternative, ok := exp.Alternative.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Alternative.Statement[0] is not ExpressionStatement. got %T",
+			exp.Alternative.Statements[0])
+	}
+
+	if !testIdentifier(t, alternative.Expression, "y") {
+		return
+	}
+}
+
+func TestIfExpression(t *testing.T) {
+	input := `if (x < y) { x }`
+
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statement) != 1 {
+		t.Fatalf("program.Statements do not contain %d statements. got %d",
+			1, len(program.Statement))
+	}
+
+	// 条件一定是表达式语句
+	stmt, ok := program.Statement[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ExpressionStatement. got %T",
+			program.Statement[0])
+	}
+
+	exp, ok := stmt.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ifExpression, got %T", stmt.Expression)
+	}
+
+	// 本示例的条件应该是一个中缀表达式
+	if !testInfixExpression(t, exp.Condition, "x", "<", "y") {
+		return
+	}
+
+	if len(exp.Consequence.Statements) != 1 {
+		t.Fatalf("consequence is not 1 statments. got %d",
+			len(exp.Consequence.Statements))
+	}
+
+	consequence, ok := exp.Consequence.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Statements[0] is not ExpressionStatement. got %T",
+			exp.Consequence.Statements[0])
+	}
+
+	if !testIdentifier(t, consequence.Expression, "x") {
+		return
+	}
+
+	if exp.Alternative != nil {
+		t.Fatalf("exp.Alternative should be 0. got %+v", exp.Alternative)
 	}
 
 }

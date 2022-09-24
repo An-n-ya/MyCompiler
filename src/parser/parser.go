@@ -48,6 +48,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 // 查找下个符号的优先级
@@ -87,6 +88,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFnExpression)
 
 	// 注册中缀解析函数
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -98,6 +100,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	// 用中缀解析左括号 用作解析调用函数
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
 	return p
 }
@@ -374,4 +378,89 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		p.nextToken()
 	}
 	return block
+}
+
+func (p *Parser) parseFnExpression() ast.Expression {
+	expression := &ast.FnExpression{Token: p.curToken}
+
+	// fn后面应该是括号
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	// 解析参数
+	expression.Parameters = p.parseFnParameters()
+
+	// 参数后应该是花括号
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	// 解析函数体
+	expression.Body = p.parseBlockStatement()
+	return expression
+
+}
+
+func (p *Parser) parseFnParameters() []*ast.Identifier {
+	var params []*ast.Identifier
+
+	// 跳过左括号
+	p.nextToken()
+
+	for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+		ident := &ast.Identifier{
+			Token: p.curToken,
+			Value: p.curToken.Literal,
+		}
+		params = append(params, ident)
+		p.nextToken()
+
+		if p.curTokenIs(token.RPAREN) || p.curTokenIs(token.EOF) {
+			break
+		}
+
+		// 当前应该是逗号
+		if !p.curTokenIs(token.COMMA) {
+			return nil
+		}
+		p.nextToken()
+	}
+	// 当前应该是右括号
+	if !p.curTokenIs(token.RPAREN) {
+		return nil
+	}
+
+	return params
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	// 中缀表达式传过来的左值就是函数
+	expression := &ast.CallExpression{
+		Token:    p.curToken,
+		Function: function,
+	}
+	expression.Arguments = p.parseCallArguments()
+	return expression
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	var args []ast.Expression
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return args
 }

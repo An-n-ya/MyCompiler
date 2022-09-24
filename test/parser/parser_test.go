@@ -593,3 +593,126 @@ func TestIfExpression(t *testing.T) {
 	}
 
 }
+
+func TestFnExpression(t *testing.T) {
+	input := `
+fn(x, y) {
+	return x + y;
+}
+`
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statement) != 1 {
+		t.Fatalf("program.Statement should have 1 Statement. got %d", len(program.Statement))
+	}
+
+	// 应该是表达式语句
+	expStmt, ok := program.Statement[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("fnExpression should be ExpressionStatement. got %T", program.Statement[0])
+	}
+
+	// 应该是函数表达式
+	fnExp, ok := expStmt.Expression.(*ast.FnExpression)
+	if !ok {
+		t.Fatalf("expStmt should be fnExpression. got %T", expStmt.Expression)
+	}
+
+	// 检查参数
+	expectsParams := []string{"x", "y"}
+	for i, param := range fnExp.Parameters {
+		if !testIdentifier(t, param, expectsParams[i]) {
+			return
+		}
+	}
+
+	// 检查函数体
+	if len(fnExp.Body.Statements) != 1 {
+		t.Fatalf("fnExp should only have 1 statement. got %d", len(fnExp.Body.Statements))
+	}
+
+	// 应该是return语句
+	returnStmt, ok := fnExp.Body.Statements[0].(*ast.ReturnStatement)
+	if !ok {
+		t.Fatalf("the statement in fnExp should be RetunStatement. got %T", fnExp.Body.Statements[0])
+	}
+
+	// 检查中缀表达式
+	testInfixExpression(t, returnStmt.ReturnValue, "x", "+", "y")
+
+}
+
+func TestFunctionParameterParsing(t *testing.T) {
+
+	tests := []struct {
+		input          string
+		expectedParams []string
+	}{
+		{input: "fn() {};", expectedParams: []string{}},
+		{input: "fn(x) {};", expectedParams: []string{"x"}},
+		{input: "fn(x, y, z) {};", expectedParams: []string{"x", "y", "z"}},
+	}
+
+	for _, tt := range tests {
+
+		l := lexer.New(tt.input)
+		p := parser.New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		stmt := program.Statement[0].(*ast.ExpressionStatement)
+		function := stmt.Expression.(*ast.FnExpression)
+
+		if len(function.Parameters) != len(tt.expectedParams) {
+			t.Errorf("length parameters wrong. want %d, got=%d\n",
+				len(tt.expectedParams), len(function.Parameters))
+		}
+
+		for i, ident := range tt.expectedParams {
+			testLiteralExpression(t, function.Parameters[i], ident)
+		}
+	}
+
+}
+
+func TestCallExpressionParsing(t *testing.T) {
+	input := `add(1, 2 * 3, 4 + 5);`
+
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statement) != 1 {
+		t.Fatalf("program.Statement should have contain 1 statement. got %d", len(program.Statement))
+	}
+
+	stmt, ok := program.Statement[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statement[0] should be ExpressionStatement. got %T", program.Statement[0])
+	}
+
+	callExp, ok := stmt.Expression.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression should have be CallExpression. got %T", stmt.Expression)
+	}
+
+	// 函数应该是个标识符
+	fnIdent, ok := callExp.Function.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("callExp.Function should be an Indentifer, but got %T", callExp.Function)
+	}
+
+	// 检查标识符
+	if !testIdentifier(t, fnIdent, "add") {
+		return
+	}
+
+	// 检查实参
+	testLiteralExpression(t, callExp.Arguments[0], 1)
+	testInfixExpression(t, callExp.Arguments[1], 2, "*", 3)
+	testInfixExpression(t, callExp.Arguments[2], 4, "+", 5)
+}

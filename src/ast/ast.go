@@ -3,6 +3,7 @@ package ast
 import (
 	"MyCompiler/src/token"
 	"bytes"
+	"strings"
 )
 
 type Node interface {
@@ -98,6 +99,20 @@ type IfExpression struct {
 	Condition   Expression
 	Consequence *BlockStatement
 	Alternative *BlockStatement
+}
+
+// FnExpression expression 函数表达式
+type FnExpression struct {
+	Token      token.Token // 词法单元是 fn
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+// CallExpression expression 调用函数表达式
+type CallExpression struct {
+	Token     token.Token // 词法单元是 '('
+	Function  Expression  // 标识符或者是函数表达式
+	Arguments []Expression
 }
 
 // endregion
@@ -247,3 +262,42 @@ func (b *BlockStatement) String() string {
 
 func (b *BlockStatement) statementNode() {}
 
+func (f *FnExpression) TokenLiteral() string { return f.Token.Literal }
+
+func (f *FnExpression) String() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, param := range f.Parameters {
+		params = append(params, param.String())
+	}
+
+	out.WriteString("fn(")
+	out.WriteString(strings.Join(params, ","))
+	out.WriteString(")")
+	out.WriteString(f.Body.String())
+
+	return out.String()
+}
+
+func (f *FnExpression) expressionNode() {}
+
+func (c *CallExpression) TokenLiteral() string { return c.Token.Literal }
+
+func (c *CallExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, a := range c.Arguments {
+		args = append(args, a.String())
+	}
+
+	out.WriteString(c.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ","))
+	out.WriteString(")")
+
+	return out.String()
+}
+
+func (c *CallExpression) expressionNode() {}

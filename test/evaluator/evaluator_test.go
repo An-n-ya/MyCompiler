@@ -15,6 +15,8 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}{
 		{"5", 5},
 		{"10", 10},
+		{"-10", -10},
+		{"-10", -10},
 	}
 
 	for _, tt := range tests {
@@ -22,6 +24,41 @@ func TestEvalIntegerExpression(t *testing.T) {
 		testIntegerObject(t, evaluated, tt.expected)
 	}
 }
+
+func TestBangOperator(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"!false", true},
+		{"!true", false},
+		{"!5", false},
+		{"!!true", true},
+		{"!!false", false},
+		{"!!5", true},
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testBooleanObject(t, evaluated, tt.expected)
+	}
+}
+
+func TestEvalBooleanExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"true", true},
+		{"false", false},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testBooleanObject(t, evaluated, tt.expected)
+	}
+}
+
+// region 帮助函数
 
 func testEval(input string) object.Object {
 	l := lexer.New(input)
@@ -43,3 +80,17 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	}
 	return true
 }
+
+func testBooleanObject(t *testing.T, obj object.Object, expected bool) bool {
+	result, ok := obj.(*object.Boolean)
+	if !ok {
+		t.Errorf("object is not Boolean. got = %T (%+v)", obj, obj)
+		return false
+	}
+	if result.Value != expected {
+		t.Errorf("object has wrong value. got=%t, expected=%t", result.Value, expected)
+	}
+	return true
+}
+
+// endregion

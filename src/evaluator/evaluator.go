@@ -14,11 +14,14 @@ var (
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statement)
+		return evalProgram(node)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements)
+		return evalBlockStatements(node.Statements)
+	case *ast.ReturnStatement:
+		val := Eval(node.ReturnValue)
+		return &object.ReturnValue{Value: val}
 	case *ast.IfExpression:
 		return evalIfExpression(node)
 	case *ast.PrefixExpression:
@@ -39,6 +42,21 @@ func Eval(node ast.Node) object.Object {
 		}
 	}
 	return nil
+}
+
+func evalProgram(node *ast.Program) object.Object {
+	var result object.Object
+
+	for _, statement := range node.Statement {
+		result = Eval(statement)
+
+		// 需要对program立即求值，而不是递归调用evalStatement
+		// 如果是return语句，则直接返回
+		if returnValue, ok := result.(*object.ReturnValue); ok {
+			return returnValue.Value
+		}
+	}
+	return result
 }
 
 func evalIfExpression(node *ast.IfExpression) object.Object {
@@ -161,10 +179,14 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 
 }
 
-func evalStatements(stmts []ast.Statement) object.Object {
+func evalBlockStatements(stmts []ast.Statement) object.Object {
 	var result object.Object
 	for _, statement := range stmts {
 		result = Eval(statement)
+
+		if result != nil && result.Type() == object.RETURN_VALUE_OBJ {
+			return result
+		}
 	}
 	// 取最后一个表达式的值作为语句的结果
 	return result

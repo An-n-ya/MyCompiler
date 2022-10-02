@@ -3,6 +3,7 @@ package repl
 import (
 	"MyCompiler/src/evaluator"
 	"MyCompiler/src/lexer"
+	"MyCompiler/src/object"
 	"MyCompiler/src/parser"
 	"MyCompiler/src/token"
 	"bufio"
@@ -58,7 +59,8 @@ func ParserStart(in io.Reader, out io.Writer) {
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
-
+	// 创建变量表
+	env := object.NewEnvironment()
 	for {
 		fmt.Fprintf(out, PROMPT)
 		scanned := scanner.Scan()
@@ -74,7 +76,7 @@ func Start(in io.Reader, out io.Writer) {
 			printParserErrors(out, p.Error())
 			continue
 		}
-		evaluated := evaluator.Eval(program)
+		evaluated := evaluator.Eval(program, env)
 		io.WriteString(out, evaluated.Inspect())
 		io.WriteString(out, "\n")
 	}

@@ -60,6 +60,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		} else {
 			return FALSE
 		}
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value}
 	case *ast.FnExpression:
 		params := node.Parameters
 		body := node.Body
@@ -193,8 +195,26 @@ func evalInfixExpression(operator string, left object.Object, right object.Objec
 	case left.Type() == object.BOOLEAN_OBJ && right.Type() == object.BOOLEAN_OBJ:
 		// 左右表达式的值都是布尔值
 		return evalBooleanInfixExpression(operator, left, right)
+	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
+		// 左右都是字符串
+		return evalStringInfixExpression(operator, left, right)
 	case left.Type() != right.Type():
 		return newError("type mismatch: %s %s %s", left.Type(), operator, right.Type())
+	default:
+		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
+	}
+}
+
+func evalStringInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+	leftVal := left.(*object.String).Value
+	rightVal := right.(*object.String).Value
+	switch operator {
+	case "+":
+		return &object.String{Value: leftVal + rightVal}
+	case "==":
+		return &object.Boolean{Value: leftVal == rightVal}
+	case "!=":
+		return &object.Boolean{Value: leftVal != rightVal}
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), operator, right.Type())
 	}

@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"MyCompiler/src/token"
+	"bytes"
 )
 
 // TODO: 支持Unicode， 需要把ch改成rune，并且要更换readChar的逻辑
@@ -66,6 +67,9 @@ func (l *Lexer) NextToken() token.Token {
 		tok = tokenFactory(token.LBRACE, l.ch)
 	case '}':
 		tok = tokenFactory(token.RBRACE, l.ch)
+	case '"':
+		tok.Type = token.STRING
+		tok.Literal = l.readString()
 	case 0:
 		// 读到的字符为空 - 返回空字符串（这里需要特殊处理）
 		tok = token.Token{Type: token.EOF}
@@ -153,7 +157,44 @@ func (l *Lexer) peekChar() byte {
 	}
 }
 
+func (l *Lexer) readString() string {
+	// position := l.position + 1
+	var out bytes.Buffer
+	for {
+		l.readChar()
+		if l.ch == '\\' {
+			// 如果当前是\,就往后读两次
+			l.readChar()
+			handleEscape(&out, l.ch)
+			continue
+		}
+		if l.ch == '"' || l.ch == 0 {
+			break
+		}
+		out.WriteByte(l.ch)
+	}
+	return out.String()
+}
+
 // 创建Token的工厂方法
 func tokenFactory(tokenType token.TokenType, ch byte) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
+}
+
+// 处理转义字符
+func handleEscape(out *bytes.Buffer, ch byte) {
+	if ch == 'n' {
+		out.WriteByte('\n')
+	} else if ch == '"' {
+		out.WriteByte('"')
+	} else if ch == '\\' {
+		out.WriteByte('\\')
+	} else if ch == 'b' {
+		out.WriteByte('\b')
+	} else if ch == '\r' {
+		out.WriteByte('\r')
+	} else if ch == '\t' {
+		out.WriteByte('\t')
+	}
+
 }

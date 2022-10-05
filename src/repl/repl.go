@@ -9,11 +9,40 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 )
 
 const PROMPT = ">> "
 
 // TODO: 解析命令行参数
+func Start(in io.Reader, out io.Writer) {
+	if len(os.Args) == 1 {
+		EvaluateStart(in, out)
+		return
+	}
+	helpMsg := `
+Usage:
+
+	liu <command>
+
+The commands are:
+
+	lexer/lex       show the lexer structure
+	parser/ast      show the ast structure
+	[default]       evaluate the expression
+	
+`
+	switch os.Args[1] {
+	case "lexer", "lex":
+		LexerStart(in, out)
+	case "parser", "ast":
+		ParserStart(in, out)
+	case "help":
+		fmt.Println(helpMsg)
+	default:
+		fmt.Println(os.Args[1], ": unknown command\nRun 'help' for usage")
+	}
+}
 
 func LexerStart(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
@@ -57,7 +86,7 @@ func ParserStart(in io.Reader, out io.Writer) {
 	}
 }
 
-func Start(in io.Reader, out io.Writer) {
+func EvaluateStart(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 	// 创建变量表
 	env := object.NewEnvironment()

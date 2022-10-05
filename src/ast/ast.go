@@ -72,6 +72,12 @@ type IntegerLiteral struct {
 	Value int64
 }
 
+// StringLiteral expression 字符串字面量
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
 // BooleanLiteral expression 布尔字面量表达式
 type BooleanLiteral struct {
 	Token token.Token
@@ -199,6 +205,12 @@ func (b *BooleanLiteral) TokenLiteral() string { return b.Token.Literal }
 func (b *BooleanLiteral) String() string { return b.Token.Literal }
 
 func (b *BooleanLiteral) expressionNode() {}
+
+func (s *StringLiteral) TokenLiteral() string { return s.Token.Literal }
+
+func (s *StringLiteral) String() string { return s.Token.Literal }
+
+func (s *StringLiteral) expressionNode() {}
 
 func (p *PrefixExpression) TokenLiteral() string { return p.Token.Literal }
 

@@ -84,6 +84,19 @@ type BooleanLiteral struct {
 	Value bool
 }
 
+// ArrayLiteral expression 数组字面量
+type ArrayLiteral struct {
+	Token    token.Token
+	Elements []Expression
+}
+
+// IndexExpression expression 数组索引表达式
+type IndexExpression struct {
+	Token token.Token
+	Left  Expression
+	Index Expression
+}
+
 // PrefixExpression expression 前缀表达式
 type PrefixExpression struct {
 	Token    token.Token
@@ -313,3 +326,38 @@ func (c *CallExpression) String() string {
 }
 
 func (c *CallExpression) expressionNode() {}
+
+func (a *ArrayLiteral) TokenLiteral() string { return a.Token.Literal }
+
+func (a *ArrayLiteral) String() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for _, ele := range a.Elements {
+		elements = append(elements, ele.String())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
+func (a *ArrayLiteral) expressionNode() {}
+
+func (i *IndexExpression) TokenLiteral() string { return i.Token.Literal }
+
+func (i *IndexExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(i.Left.String())
+	out.WriteString("[")
+	out.WriteString(i.Index.String())
+	out.WriteString("])")
+
+	return out.String()
+}
+
+func (i *IndexExpression) expressionNode() {}

@@ -39,10 +39,12 @@ const (
 	SEMICOLON = ";"
 
 	// 括号
-	LPAREN = "("
-	RPAREN = ")"
-	LBRACE = "{"
-	RBRACE = "}"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	// 关键字
 	FUNCTION = "FUNCTION"

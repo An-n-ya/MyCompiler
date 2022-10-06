@@ -14,7 +14,6 @@ import (
 
 const PROMPT = ">> "
 
-// TODO: 解析命令行参数
 func Start(in io.Reader, out io.Writer) {
 	if len(os.Args) == 1 {
 		EvaluateStart(in, out)

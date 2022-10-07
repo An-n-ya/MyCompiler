@@ -90,6 +90,12 @@ type ArrayLiteral struct {
 	Elements []Expression
 }
 
+// HashLiteral expression 哈希字面量
+type HashLiteral struct {
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
 // IndexExpression expression 数组索引表达式
 type IndexExpression struct {
 	Token token.Token
@@ -343,6 +349,25 @@ func (a *ArrayLiteral) String() string {
 
 	return out.String()
 }
+
+func (h *HashLiteral) TokenLiteral() string { return h.Token.Literal }
+
+func (h *HashLiteral) String() string {
+	var out bytes.Buffer
+
+	var pairs []string
+	for key, value := range h.Pairs {
+		pairs = append(pairs, key.String()+":"+value.String())
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
+}
+
+func (h *HashLiteral) expressionNode() {}
 
 func (a *ArrayLiteral) expressionNode() {}
 

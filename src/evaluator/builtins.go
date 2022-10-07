@@ -1,6 +1,9 @@
 package evaluator
 
-import "MyCompiler/src/object"
+import (
+	"MyCompiler/src/object"
+	"fmt"
+)
 
 var builtins = map[string]*object.Builtin{
 	"len": &object.Builtin{
@@ -49,6 +52,16 @@ var builtins = map[string]*object.Builtin{
 			if len(arr.Elements) > 0 {
 				return arr.Elements[len(arr.Elements)-1]
 			}
+			return NULL
+		},
+	},
+	"print": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			for _, arg := range args {
+				// 挨个输出即可
+				fmt.Println(arg.Inspect())
+			}
+
 			return NULL
 		},
 	},

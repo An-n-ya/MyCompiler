@@ -74,6 +74,8 @@ func (l *Lexer) NextToken() token.Token {
 		tok = tokenFactory(token.LBRACKET, l.ch)
 	case ']':
 		tok = tokenFactory(token.RBRACKET, l.ch)
+	case ':':
+		tok = tokenFactory(token.COLON, l.ch)
 	case 0:
 		// 读到的字符为空 - 返回空字符串（这里需要特殊处理）
 		tok = token.Token{Type: token.EOF}

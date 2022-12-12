@@ -1,11 +1,11 @@
 package repl
 
 import (
-	"MyCompiler/src/evaluator"
+	"MyCompiler/src/compiler"
 	"MyCompiler/src/lexer"
-	"MyCompiler/src/object"
 	"MyCompiler/src/parser"
 	"MyCompiler/src/token"
+	"MyCompiler/src/vm"
 	"bufio"
 	"fmt"
 	"io"
@@ -88,7 +88,7 @@ func ParserStart(in io.Reader, out io.Writer) {
 func EvaluateStart(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 	// 创建变量表
-	env := object.NewEnvironment()
+	// env := object.NewEnvironment()
 	for {
 		fmt.Fprintf(out, PROMPT)
 		scanned := scanner.Scan()
@@ -104,8 +104,25 @@ func EvaluateStart(in io.Reader, out io.Writer) {
 			printParserErrors(out, p.Error())
 			continue
 		}
-		evaluated := evaluator.Eval(program, env)
-		io.WriteString(out, evaluated.Inspect())
+		// 换成编译 + 解释器模式
+		comp := compiler.New()
+		err := comp.Compile(program)
+		if err != nil {
+			fmt.Fprintf(out, "Compilation failed:\n %s\n", err)
+			continue
+		}
+		// 运行虚拟机
+		machine := vm.New(comp.Bytecode())
+		err = machine.Run()
+		if err != nil {
+			fmt.Fprintf(out, "Executing bytecode failed:\n %s\n", err)
+			continue
+		}
+		// 把栈顶取出来输出
+		stackTop := machine.StackTop()
+
+		// evaluated := evaluator.Eval(program, env)
+		io.WriteString(out, stackTop.Inspect())
 		io.WriteString(out, "\n")
 	}
 }

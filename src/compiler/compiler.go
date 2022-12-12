@@ -4,6 +4,7 @@ import (
 	"MyCompiler/src/ast"
 	"MyCompiler/src/code"
 	"MyCompiler/src/object"
+	"fmt"
 )
 
 type Compiler struct {
@@ -48,6 +49,13 @@ func (self *Compiler) Compile(node ast.Node) error {
 		err = self.Compile(node.Right)
 		if err != nil {
 			return err
+		}
+
+		switch node.Operator {
+		case "+":
+			self.emit(code.OpAdd)
+		default:
+			return fmt.Errorf("unknown operator %s", node.Operator)
 		}
 	case *ast.IntegerLiteral:
 		integer := &object.Integer{Value: node.Value}

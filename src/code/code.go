@@ -12,6 +12,7 @@ type Opcode byte
 // 操作码的定义
 const (
 	OpConstant Opcode = iota
+	OpAdd
 )
 
 type Definition struct {
@@ -22,6 +23,7 @@ type Definition struct {
 // 所有操作码定义的字典
 var definitions = map[Opcode]*Definition{
 	OpConstant: {"OpConstant", []int{2}}, // OpConstant唯一的操作数有两字节宽
+	OpAdd:      {"OpAdd", []int{}},       // add操作没有操作数
 }
 
 func Lookup(op Opcode) (*Definition, error) {
@@ -126,6 +128,8 @@ func (self Instructions) fmtInstruction(def *Definition, operands []int) string 
 	switch operandCount {
 	case 1:
 		return fmt.Sprintf("%s %d", def.Name, operands[0])
+	case 0:
+		return def.Name // 如果没有操作数就直接返回指令名称
 	}
 
 	return fmt.Sprintf("ERROR: unhandled operandCount for %s\n", def.Name)
